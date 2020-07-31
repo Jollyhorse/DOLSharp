@@ -380,16 +380,40 @@ namespace DOL.GS.ServerProperties
 		#region SERVER
 
 		/// <summary>
+		/// Enable/Disable Autokick Timer
+		/// </summary>
+		[ServerProperty("server", "player idle kick", "Enable auto kick for inactive players", false)]
+		public static bool KICK_IDLE_PLAYER_STATUS;
+
+		/// <summary>
+		/// How long before kicking inactive player
+		/// </summary>
+		[ServerProperty("server", "minutes to kick", "How many minutes before kicking inactive player to char screen <Default 1hr> ", 60)]
+		public static int KICK_IDLE_PLAYER_TIME;
+
+		/// <summary>
 		/// Disable quit timers for players?
 		/// </summary>
 		[ServerProperty("server", "disable_quit_timer", "Allow players to log out without waiting?", false)]
 		public static bool DISABLE_QUIT_TIMER;
 
 		/// <summary>
+		/// Enable Discord Webhook?
+		/// </summary>
+		[ServerProperty("server", "Discord_Webhook_Active", "Enable Discord webhook?", false)]
+		public static bool DISCORD_ACTIVE;
+
+		/// <summary>
+		/// Webhook ID
+		/// </summary>
+		[ServerProperty("server", "Discord_Webhook_ID", "The id of the webhook", "")]
+		public static string DISCORD_WEBHOOK_ID;		
+
+		/// <summary>
 		/// Enable integrated serverlistupdate script?
 		/// </summary>
-		[ServerProperty("server", "enable_serverlistupdate", "Enable in-built serverlistupdate script?", false)]
-		public static bool USE_SERVER_LIST_UPDATE_INTEGRATED;
+		[ServerProperty("server", "serverlistupdate_enabled", "Enable in-built serverlistupdate script?", false)]
+		public static bool SERVERLISTUPDATE_ENABLED;
 
 		/// <summary>
 		/// The username for server list update.
@@ -786,7 +810,7 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Property to cause beneficial spells to target the caster if current target isn't valid
 		/// </summary>
-		[ServerProperty("server", "AUTOSELECT_CASTER", "Set to true if you wish beneficial spells to target the caster if the current target isn't valid.  Allows self-healing without changing targets.", false)]
+		[ServerProperty("server", "autoselect_caster", "Set to True if you wish beneficial spells to target the caster if the current target isn't valid.  Allows self-healing without changing targets.", false)]
 		public static bool AUTOSELECT_CASTER;
 		#endregion
 
@@ -987,16 +1011,28 @@ namespace DOL.GS.ServerProperties
 		/// Relic Bonus Modifier
 		/// </summary>
 		[ServerProperty("rates", "relic_owning_bonus", "Relic Owning Bonus in percent per relic (default 10%) in effect when owning enemy relic", (short)10)]
-		public static short RELIC_OWNING_BONUS;		
+		public static short RELIC_OWNING_BONUS;
 
 		#endregion
 
 		#region NPCs
 		/// <summary>
+		/// Doppelganger realm point value
+		/// </summary>
+		[ServerProperty("npc", "doppelganger_realm_points", "Realm point value of doppelgangers. ", 400)]
+		public static int DOPPELGANGER_REALM_POINTS;
+
+		/// <summary>
+		/// Doppelganger bounty point value
+		/// </summary>
+		[ServerProperty("npc", "doppelganger_bounty_points", "Bounty point value of doppelgangers. ", 250)]
+		public static int DOPPELGANGER_BOUNTY_POINTS;
+
+		/// <summary>
 		/// Base Value to use when auto-setting STR stat.
 		/// </summary>
-		[ServerProperty("npc", "mob_autoset_str_base", "Base Value to use when auto-setting STR stat. ", 30.0)]
-		public static double MOB_AUTOSET_STR_BASE;
+		[ServerProperty("npc", "mob_autoset_str_base", "Base Value to use when auto-setting STR stat. ", (short)30)]
+		public static short MOB_AUTOSET_STR_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting STR stat.
@@ -1007,8 +1043,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting CON stat.
 		/// </summary>
-		[ServerProperty("npc", "mob_autoset_con_base", "Base Value to use when auto-setting CON stat. ", 30.0)]
-		public static double MOB_AUTOSET_CON_BASE;
+		[ServerProperty("npc", "mob_autoset_con_base", "Base Value to use when auto-setting CON stat. ", (short)30)]
+		public static short MOB_AUTOSET_CON_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting CON stat.
@@ -1019,8 +1055,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting QUI stat.
 		/// </summary>
-		[ServerProperty("npc", "mob_autoset_qui_base", "Base Value to use when auto-setting qui stat. ", 30.0)]
-		public static double MOB_AUTOSET_QUI_BASE;
+		[ServerProperty("npc", "mob_autoset_qui_base", "Base Value to use when auto-setting qui stat. ", (short)30)]
+		public static short MOB_AUTOSET_QUI_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting QUI stat.
@@ -1031,8 +1067,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting DEX stat.
 		/// </summary>
-		[ServerProperty("npc", "mob_autoset_dex_base", "Base Value to use when auto-setting DEX stat. ", 30.0)]
-		public static double MOB_AUTOSET_DEX_BASE;
+		[ServerProperty("npc", "mob_autoset_dex_base", "Base Value to use when auto-setting DEX stat. ", (short)30)]
+		public static short MOB_AUTOSET_DEX_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting DEX stat.
@@ -1043,31 +1079,49 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting INT stat.
 		/// </summary>
-		[ServerProperty("npc", "mob_autoset_int_base", "Base Value to use when auto-setting INT stat. ", 30)]
-		public static int MOB_AUTOSET_INT_BASE;
+		[ServerProperty("npc", "mob_autoset_int_base", "Base Value to use when auto-setting INT stat. ", (short)30)]
+		public static short MOB_AUTOSET_INT_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting INT stat.
 		/// </summary>
 		[ServerProperty("npc", "mob_autoset_int_multiplier", "Multiplier to use when auto-setting INT stat. ", 1.0)]
-		public static double MOB_AUTOSET_INT_MULTIPLIER;		
-		
+		public static double MOB_AUTOSET_INT_MULTIPLIER;
+
+		/// <summary>
+		/// Multiplier for mob buff/debuff effects
+		/// </summary>
+		[ServerProperty("npc", "mob_buff_effect_multiplier", "Determines effectiveness of buff/debuff effects on mobs.  Debuff effects are multiplier * stat / level, buffs effects are half that. ", 13)]
+		public static double MOB_BUFF_EFFECT_MULTIPLIER;
+
+		/// <summary>
+		/// Enable 2H weapon damage bonus for mobs?
+		/// </summary>
+		[ServerProperty("npc", "mob_2h_bonus_damage", "If true, mobs that use a 2H weapon and have a block chance get bonus damage equal to their block chance to compensate for not being able to block. ", false)]
+		public static bool MOB_2H_BONUS_DAMAGE;
+
+		/// <summary>
+		/// Do pets level up with their owner?
+		/// </summary>
+		[ServerProperty("npc", "pet_levels_with_owner", "Do pets level up with their owner? ", false)]
+		public static bool PET_LEVELS_WITH_OWNER;
+
 		/// <summary>
 		/// Base Value to use when auto-setting pet STR stat.
 		/// </summary>
-		[ServerProperty("npc", "pet_autoset_str_base", "Base Value to use when auto-setting Pet STR stat. ", 30.0)]
-		public static double PET_AUTOSET_STR_BASE;
+		[ServerProperty("npc", "pet_autoset_str_base", "Base Value to use when auto-setting Pet STR stat. ", (short)30)]
+		public static short PET_AUTOSET_STR_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting pet STR stat.
-		/// </summary>
+		/// </summary> 
 		[ServerProperty("npc", "pet_autoset_str_multiplier", "Multiplier to use when auto-setting Pet STR stat. Multiplied by 10 when applied. ", 1.0)]
 		public static double PET_AUTOSET_STR_MULTIPLIER;
 		
 		/// Base Value to use when auto-setting pet CON stat.
 		/// </summary>
-		[ServerProperty("npc", "pet_autoset_con_base", "Base Value to use when auto-setting Pet CON stat. ", 30.0)]
-		public static double PET_AUTOSET_CON_BASE;
+		[ServerProperty("npc", "pet_autoset_con_base", "Base Value to use when auto-setting Pet CON stat. ", (short)30)]
+		public static short PET_AUTOSET_CON_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting pet CON stat.
@@ -1077,8 +1131,8 @@ namespace DOL.GS.ServerProperties
 
 		/// Base Value to use when auto-setting Pet DEX stat.
 		/// </summary>
-		[ServerProperty("npc", "pet_autoset_dex_base", "Base Value to use when auto-setting Pet DEX stat. ", 30.0)]
-		public static double PET_AUTOSET_DEX_BASE;
+		[ServerProperty("npc", "pet_autoset_dex_base", "Base Value to use when auto-setting Pet DEX stat. ", (short)30)]
+		public static short PET_AUTOSET_DEX_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting pet DEX stat.
@@ -1088,8 +1142,8 @@ namespace DOL.GS.ServerProperties
 
 		/// Base Value to use when auto-setting Pet QUI stat.
 		/// </summary>
-		[ServerProperty("npc", "pet_autoset_qui_base", "Base Value to use when auto-setting Pet QUI stat. ", 30.0)]
-		public static double PET_AUTOSET_QUI_BASE;
+		[ServerProperty("npc", "pet_autoset_qui_base", "Base Value to use when auto-setting Pet QUI stat. ", (short)30)]
+		public static short PET_AUTOSET_QUI_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting pet QUI stat.
@@ -1101,16 +1155,126 @@ namespace DOL.GS.ServerProperties
 		/// Multiplier to use when auto-setting pet INT stat.
 		/// INT is the stat used for spell damage for mobs/pets
 		/// </summary>
-		[ServerProperty("npc", "pet_autoset_int_base", "Multiplier to use when auto-setting Pet INT stat. ", 30)]
-		public static double PET_AUTOSET_INT_BASE;
+		[ServerProperty("npc", "pet_autoset_int_base", "Multiplier to use when auto-setting Pet INT stat. ", (short)30)]
+		public static short PET_AUTOSET_INT_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting pet INT stat.
 		/// INT is the stat used for spell damage for mobs/pets
 		/// </summary>
 		[ServerProperty("npc", "pet_autoset_int_multiplier", "Multiplier to use when auto-setting Pet INT stat. ", 1.0)]
-		public static double PET_AUTOSET_INT_MULTIPLIER;		
-		
+		public static double PET_AUTOSET_INT_MULTIPLIER;
+
+		/// <summary>
+		/// Multiplier for pet buff/debuff effects
+		/// </summary>
+		[ServerProperty("npc", "pet_buff_effect_multiplier", "Determines effectiveness of buff/debuff effects on pets.  Debuff effects are multiplier * stat / level, buffs effects are half that. ", 13)]
+		public static double PET_BUFF_EFFECT_MULTIPLIER;
+
+		/// Enable 2H weapon damage bonus for pets?
+		/// </summary>
+		[ServerProperty("npc", "pet_2h_bonus_damage", "If true, pets that use a 2H weapon and have a block chance get bonus damage equal to their block chance to compensate for not being able to block. ", true)]
+		public static bool PET_2H_BONUS_DAMAGE;
+
+		// Necro pet stat properties
+
+		/// <summary>
+		/// Base value to use when setting strength for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_str_base", "Base value to use when setting strength for most necromancer pets.", (short)60)]
+		public static short NECRO_PET_STR_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting strength for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_str_multiplier", "Multiplier to use when setting strength for most necromancer pets.", 1.0)]
+		public static double NECRO_PET_STR_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting constitution for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_con_base", "Base value to use when setting constitution for most necromancer pets.", (short)60)]
+		public static short NECRO_PET_CON_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting constitution for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_con_multiplier", "Multiplier to use when setting constitution for most necromancer pets.", 0.5)]
+		public static double NECRO_PET_CON_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting dexterity for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_dex_base", "Base value to use when setting dexterity for most necromancer pets.", (short)60)]
+		public static short NECRO_PET_DEX_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting dexterity for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_dex_multiplier", "Multiplier to use when setting dexterity for most necromancer pets.", 0.0)]
+		public static double NECRO_PET_DEX_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting quickness for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_qui_base", "Base value to use when setting quickness for most necromancer pets.", (short)60)]
+		public static short NECRO_PET_QUI_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting quickness for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_qui_multiplier", "Multiplier to use when setting quickness for most necromancer pets.", 0.3333)]
+		public static double NECRO_PET_QUI_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting strength for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_str_base", "Base value to use when setting strength for greater necroservant pets.", (short)60)]
+		public static short NECRO_GREATER_PET_STR_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting strength for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_str_multiplier", "Multiplier to use when setting strength for greater necroservant pets.", 0.0)]
+		public static double NECRO_GREATER_PET_STR_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting constitution forgreater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_con_base", "Base value to use when setting constitution for greater necroservant pets.", (short)60)]
+		public static short NECRO_GREATER_PET_CON_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting constitution for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_con_multiplier", "Multiplier to use when setting constitution for greater necroservant pets.", 0.3333)]
+		public static double NECRO_GREATER_PET_CON_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting dexterity for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_dex_base", "Base value to use when setting dexterity for greater necroservant pets.", (short)60)]
+		public static short NECRO_GREATER_PET_DEX_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting dexterity for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_dex_multiplier", "Multiplier to use when setting dexterity for greater necroservant pets.", 0.5)]
+		public static double NECRO_GREATER_PET_DEX_MULTIPLIER;
+
+		/// <summary>
+		/// Base value to use when setting quickness for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_qui_base", "Base value to use when setting quickness for greater necroservant pets.", (short)60)]
+		public static short NECRO_GREATER_PET_QUI_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting quickness for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_qui_multiplier", "Multiplier to use when setting quickness for greater necroservant pets.", 1.0)]
+		public static double NECRO_GREATER_PET_QUI_MULTIPLIER;
+
+
 		/// <summary>
 		/// How often should pets think?  Default 1500 or 1.5 seconds
 		/// </summary>
@@ -1121,8 +1285,20 @@ namespace DOL.GS.ServerProperties
 		/// Scale pet spell values according to their level?
 		/// </summary>
 		[ServerProperty("npc", "pet_scale_spell_max_level", "Disabled if 0 or less.  If greater than 0, this value is the level at which pets cast their spells at 100% effectivness, so choose spells for pets assuming they're at the level set here.  Live is max pet level, 44 or 50 depending on patch.", 0)]
-		public static int PET_SCALE_SPELL_MAX_LEVEL;		
-		
+		public static int PET_SCALE_SPELL_MAX_LEVEL;
+
+		/// <summary>
+		/// Scale pet spell values according to their level?
+		/// </summary>
+		[ServerProperty("npc", "pet_bd_commander_taunt_multiplier", "Percentage of damage that BD commanders get as extra aggro when taunting, e.g. a taunting BD commander gets 150% normal aggro at 50, 200% at 100, 250% at 150 etc. ", 150)]
+		public static int PET_BD_COMMANDER_TAUNT_VALUE;
+
+		/// <summary>
+		/// Scale pet spell values according to their level?
+		/// </summary>
+		[ServerProperty("npc", "pet_cap_bd_minion_spell_scaling_by_spec", "When scaling BD minion spells, do we cap the level they scale do by the BD's spec level?  This provides an incentive to spec darkness and suppression and use items that boost them.", false)]
+		public static bool PET_CAP_BD_MINION_SPELL_SCALING_BY_SPEC;
+
 		/// <summary>
 		/// What level to start increasing mob damage
 		/// </summary>
@@ -1544,8 +1720,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting STR stat.
 		/// </summary>
-		[ServerProperty("keeps", "guard_autoset_str_base", "Base Value to use when auto-setting STR stat. ", 20)]
-		public static int GUARD_AUTOSET_STR_BASE;
+		[ServerProperty("keeps", "guard_autoset_str_base", "Base Value to use when auto-setting STR stat. ", (short)20)]
+		public static short GUARD_AUTOSET_STR_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting STR stat.
@@ -1556,8 +1732,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting CON stat.
 		/// </summary>
-		[ServerProperty("keeps", "guard_autoset_con_base", "Base Value to use when auto-setting CON stat. ", 30)]
-		public static int GUARD_AUTOSET_CON_BASE;
+		[ServerProperty("keeps", "guard_autoset_con_base", "Base Value to use when auto-setting CON stat. ", (short)30)]
+		public static short GUARD_AUTOSET_CON_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting CON stat.
@@ -1568,8 +1744,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting QUI stat.
 		/// </summary>
-		[ServerProperty("keeps", "guard_autoset_qui_base", "Base Value to use when auto-setting qui stat. ", 40)]
-		public static int GUARD_AUTOSET_QUI_BASE;
+		[ServerProperty("keeps", "guard_autoset_qui_base", "Base Value to use when auto-setting qui stat. ", (short)40)]
+		public static short GUARD_AUTOSET_QUI_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting QUI stat.
@@ -1580,8 +1756,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting DEX stat.
 		/// </summary>
-		[ServerProperty("keeps", "guard_autoset_dex_base", "Base Value to use when auto-setting DEX stat. ", 1)]
-		public static int GUARD_AUTOSET_DEX_BASE;
+		[ServerProperty("keeps", "guard_autoset_dex_base", "Base Value to use when auto-setting DEX stat. ", (short)1)]
+		public static short GUARD_AUTOSET_DEX_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting DEX stat.
@@ -1592,8 +1768,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting INT stat.
 		/// </summary>
-		[ServerProperty("keeps", "guard_autoset_int_base", "Base Value to use when auto-setting INT stat. ", 30)]
-		public static int GUARD_AUTOSET_INT_BASE;
+		[ServerProperty("keeps", "guard_autoset_int_base", "Base Value to use when auto-setting INT stat. ", (short)30)]
+		public static short GUARD_AUTOSET_INT_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting INT stat.
@@ -1604,8 +1780,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting STR stat.
 		/// </summary>
-		[ServerProperty("keeps", "lord_autoset_str_base", "Base Value to use when auto-setting STR stat. ", 20)]
-		public static int LORD_AUTOSET_STR_BASE;
+		[ServerProperty("keeps", "lord_autoset_str_base", "Base Value to use when auto-setting STR stat. ", (short)20)]
+		public static short LORD_AUTOSET_STR_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting STR stat.
@@ -1616,8 +1792,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting CON stat.
 		/// </summary>
-		[ServerProperty("keeps", "lord_autoset_con_base", "Base Value to use when auto-setting CON stat. ", 30)]
-		public static int LORD_AUTOSET_CON_BASE;
+		[ServerProperty("keeps", "lord_autoset_con_base", "Base Value to use when auto-setting CON stat. ", (short)30)]
+		public static short LORD_AUTOSET_CON_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting CON stat.
@@ -1628,8 +1804,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting QUI stat.
 		/// </summary>
-		[ServerProperty("keeps", "lord_autoset_qui_base", "Base Value to use when auto-setting qui stat. ", 60)]
-		public static int LORD_AUTOSET_QUI_BASE;
+		[ServerProperty("keeps", "lord_autoset_qui_base", "Base Value to use when auto-setting qui stat. ", (short)60)]
+		public static short LORD_AUTOSET_QUI_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting QUI stat.
@@ -1640,8 +1816,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting DEX stat.
 		/// </summary>
-		[ServerProperty("keeps", "lord_autoset_dex_base", "Base Value to use when auto-setting DEX stat. ", 2)]
-		public static int LORD_AUTOSET_DEX_BASE;
+		[ServerProperty("keeps", "lord_autoset_dex_base", "Base Value to use when auto-setting DEX stat. ", (short)2)]
+		public static short LORD_AUTOSET_DEX_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting DEX stat.
@@ -1652,15 +1828,26 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Base Value to use when auto-setting INT stat.
 		/// </summary>
-		[ServerProperty("keeps", "lord_autoset_int_base", "Base Value to use when auto-setting INT stat. ", 30)]
-		public static int LORD_AUTOSET_INT_BASE;
+		[ServerProperty("keeps", "lord_autoset_int_base", "Base Value to use when auto-setting INT stat. ", (short)30)]
+		public static short LORD_AUTOSET_INT_BASE;
 
 		/// <summary>
 		/// Multiplier to use when auto-setting INT stat.
 		/// </summary>
 		[ServerProperty("keeps", "lord_autoset_int_multiplier", "Multiplier to use when auto-setting INT stat. ", 1.0)]
 		public static double LORD_AUTOSET_INT_MULTIPLIER;
-		
+
+		/// <summary>
+		/// Multiplier for keep guard buff/debuff effects
+		/// </summary>
+		[ServerProperty("npc", "guard_buff_effect_multiplier", "Determines effectiveness of buff/debuff effects on keep guards.  Debuff effects are multiplier * stat / level, buffs effects are half that. ", 13)]
+		public static double GUARD_BUFF_EFFECT_MULTIPLIER;
+
+		/// Enable 2H weapon damage bonus for keep guards?
+		/// </summary>
+		[ServerProperty("keeps", "guard_2h_bonus_damage", "If true, keep guards that use a 2H weapon and have a block chance get bonus damage equal to their block chance to compensate for not being able to block. ", true)]
+		public static bool GUARD_2H_BONUS_DAMAGE;
+
 		/// <summary>
 		/// Respawn time for keep guards in minutes.
 		/// </summary>
@@ -1675,6 +1862,36 @@ namespace DOL.GS.ServerProperties
 		#endregion
 
 		#region PVE / TOA
+		/// <summary>
+		/// Initial percent chance of a mob BAFing for a single attacker
+		/// </summary>
+		[ServerProperty("pve", "baf_initial_chance", "Percent chance for a mob to bring a friend when attacked by a single attacker.  Each multiples of 100 guarantee an add, so a cumulative chance of 250% guarantees two adds with a 50% chance of a third.", 0)]
+		public static int BAF_INITIAL_CHANCE;
+
+		/// <summary>
+		/// Added percent chance of a mob BAFing for each attacker past the first
+		/// </summary>
+		[ServerProperty("pve", "baf_additional_chance", "Percent chance for a mob to bring a friend for each additional attacker.  Each multiples of 100 guarantee an add, so a cumulative chance of 250% guarantees two adds with a 50% chance of a third.", 50)]
+		public static int BAF_ADDITIONAL_CHANCE;
+
+		/// <summary>
+		/// Do BAF mobs attack the player who pulled?
+		/// </summary>
+		[ServerProperty("pve", "baf_mobs_attack_puller", "Do mobs brought by friends only attack the character who pulled them?  If false, mobs attack random players near the puller.", false)]
+		public static bool BAF_MOBS_ATTACK_PULLER;
+
+		/// <summary>
+		/// Do BAF mobs attack characters in the same BG as the pulling character?
+		/// </summary>
+		[ServerProperty("pve", "baf_mobs_attack_bg_members", "Do mobs brought by friends attack random nearby players in the puller's battlegroup?  If false, mobs only attack characters in the pulling player's group.", false)]
+		public static bool BAF_MOBS_ATTACK_BG_MEMBERS;
+
+		/// <summary>
+		/// Is the number of mobs added by BAF based on the number of nearby players in the puller's BG?
+		/// </summary>
+		[ServerProperty("pve", "baf_mobs_count_bg_members", "Is the number of mobs brought by a friend based on the number of nearby players in the pulling player's battlegroup?  If false, the number of mobs brought is determined by the number of players in the pulling player's group.", false)]
+		public static bool BAF_MOBS_COUNT_BG_MEMBERS;			
+
 		/// <summary>
 		/// Adjustment to missrate per number of attackers
 		/// </summary>
@@ -1911,6 +2128,11 @@ namespace DOL.GS.ServerProperties
 		#endregion
 
 		#region CLASSES
+		/// <summary>
+		/// Allow players to /train without having a trainer present
+		/// </summary>
+		[ServerProperty("classes", "allow_train_anywhere", "Allow players to use the /train command to open a trainer window anywhere in the world?", true)]
+		public static bool ALLOW_TRAIN_ANYWHERE;
 
 		/// <summary>
 		/// Disable some classes from being created
@@ -2136,6 +2358,12 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		[ServerProperty("craft", "allow_craft_norealm_items", "Allow any realm to craft items with 0 (no) realm.", false)]
 		public static bool ALLOW_CRAFT_NOREALM_ITEMS;
+
+		/// <summary>
+		/// Max character crafting skill?
+		/// </summary>
+		[ServerProperty("craft", "crafting_max_skills", "Set character crafting skills to max level.", false)]
+		public static bool CRAFTING_MAX_SKILLS;
 
 		/// <summary>
 		/// Use salvage per realm and get back material to use in chars realm

@@ -41,25 +41,27 @@ namespace DOL.GS.GameEvents
 		/// <summary>
         /// Gets the DAoCPortal UserName to authenticate with - Add your server username
 		/// </summary>
-		protected static string UserName = "";
+		protected static string UserName = ServerProperties.Properties.SERVER_LIST_UPDATE_USER;
 
 		/// <summary>
 		/// Gets the DAoCPortal Password to authenticate with - Add your server password
 		/// </summary>
-		protected static string Password = "";
+		protected static string Password = ServerProperties.Properties.SERVER_LIST_UPDATE_PASS;
 
-        /// <summary>
-        /// Gets player count - Don't edit this one.
-        protected static string ClientCount = WorldMgr.GetAllPlayingClientsCount().ToString();
+		/// <summary>
+		/// Gets player count - Don't edit this one.
+		protected static string ClientCount = WorldMgr.GetAllPlayingClientsCount().ToString();
         /// </summary>
        
 
         /// <summary>
         /// Gets the URL from your ftp server - Edit the URL
         /// Example: http://www.bifrostgaming.com/daocbifrost/serverinfo.php
+		/// The following URL is the one for DAoCPortal with default parameters
+		/// but you should provide different paramters than the one in GameUtils\ServerListUpdate.cs
+		/// Notice this script is on a 3mins basis, while ServerListUpdate is on a 10mins basis
         /// </summary>
-		protected static string UpdateUrl = UrlEncode("http://www.your-website-here.com/serverinfo.php?action=submit&totalclients=" + ClientCount);
-
+		protected static string UpdateUrl = UrlEncode("http://portal.dolserver.net/serverlist.php?action=submit&username=" + UserName + "&password=" + Password + "&totalclients=" + ClientCount + "&version=" + ScriptVersion);
 
 		//!!!!!!!!!!!!!!!!!!!!DO NOT EDIT BELOW THIS LINE!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		#region Code
@@ -95,7 +97,7 @@ namespace DOL.GS.GameEvents
         [ScriptLoadedEvent]
         public static void OnScriptCompiled(DOLEvent e, object sender, EventArgs args)
         {
-            if(ServerProperties.Properties.USE_SERVER_LIST_UPDATE_INTEGRATED)
+            if(ServerProperties.Properties.SERVERLISTUPDATE_ENABLED)
             {
                 Init();
                 

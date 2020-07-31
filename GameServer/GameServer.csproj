@@ -65,6 +65,7 @@
   <ItemGroup>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.4\lib\net45-full\log4net.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
@@ -79,6 +80,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Web.Extensions">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -186,6 +188,7 @@
     <Compile Include="commands\gmcommands\cast.cs" />
     <Compile Include="commands\gmcommands\ClientList.cs" />
     <Compile Include="commands\gmcommands\gmstealth.cs" />
+    <Compile Include="commands\gmcommands\ServerReboot.cs" />
     <Compile Include="commands\gmcommands\translate.cs" />
     <Compile Include="commands\gmcommands\zone.cs" />
     <Compile Include="commands\gmcommands\crafting.cs" />
@@ -352,6 +355,7 @@
     <Compile Include="database\converters\Version005.cs" />
     <Compile Include="database\updaters\DatabaseUpdateAttribute.cs" />
     <Compile Include="database\updaters\IDatabaseUpdater.cs" />
+    <Compile Include="DolWebHook.cs" />
     <Compile Include="effects\DummyEffect.cs" />
     <Compile Include="events\gameobjects\ExecuteCommandEventArgs.cs" />
     <Compile Include="events\gameobjects\InterruptedEventArgs.cs" />
@@ -372,7 +376,9 @@
     <Compile Include="gameobjects\CharacterClasses\CharacterClassBase.cs" />
     <Compile Include="gameobjects\CharacterClasses\Midgard\CharacterClassBoneDancer.cs" />
     <Compile Include="gameobjects\CustomNPC\BuffMerchant.cs" />
+    <Compile Include="gameobjects\CustomNPC\Doppelganger.cs" />
     <Compile Include="gameobjects\CustomNPC\DreadedSealCollector.cs" />
+    <Compile Include="gameobjects\CustomNPC\GameSummoner.cs" />
     <Compile Include="gameobjects\GameInventoryObject.cs" />
     <Compile Include="gameobjects\GameMythirian.cs" />
     <Compile Include="gameobjects\GameNPChelper.cs" />
@@ -1050,6 +1056,7 @@
     <Compile Include="packets\Server\PacketLib1123.cs" />
     <Compile Include="packets\Server\PacketLib1124.cs" />
     <Compile Include="packets\Server\PacketLib1125.cs" />
+    <Compile Include="packets\Server\PacketLib1126.cs" />
     <Compile Include="packets\Server\PacketLib197.cs" />
     <Compile Include="packets\Server\PacketLib196.cs" />
     <Compile Include="packets\Server\PacketLib188.cs" />
@@ -1121,7 +1128,7 @@
     <Compile Include="propertycalc\XPPointsCalculator.cs" />
     <Compile Include="quests\Atlantis\ArtifactEncounter.cs" />
     <Compile Include="quests\Atlantis\ArtifactQuest.cs" />
-<Compile Include="quests\Atlantis\Artifacts\AFlask.cs" />
+    <Compile Include="quests\Atlantis\Artifacts\AFlask.cs" />
     <Compile Include="quests\Atlantis\Artifacts\AHealersEmbrace.cs" />
     <Compile Include="quests\Atlantis\Artifacts\AlvarusLeggings.cs" />
     <Compile Include="quests\Atlantis\Artifacts\ArmsOfTheWinds.cs" />
@@ -2816,6 +2823,7 @@
   <ItemGroup>
     <None Include="language\NL\NL - AdminCommands.txt" />
     <None Include="language\CZ\CZ - General.txt" />
+    <Content Include="language\DE\GameObjects\CustomNPC\CommanderPet.txt" />
     <Content Include="language\DE\GameObjects\GameDoor.txt" />
     <Content Include="language\DE\GameObjects\GameGuard.txt" />
     <Content Include="language\DE\PlayerRealmTitles.txt" />

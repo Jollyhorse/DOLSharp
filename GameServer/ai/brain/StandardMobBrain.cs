@@ -20,7 +20,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-
 using DOL.Events;
 using DOL.GS;
 using DOL.GS.Effects;
@@ -128,7 +127,7 @@ namespace DOL.AI.Brain
 			}
 
 			//If this NPC can randomly walk around, we allow it to walk around
-			if (!Body.AttackState && CanRandomWalk && Util.Chance(DOL.GS.ServerProperties.Properties.GAMENPC_RANDOMWALK_CHANCE))
+			if (!Body.AttackState && CanRandomWalk && !Body.IsRoaming && Util.Chance(DOL.GS.ServerProperties.Properties.GAMENPC_RANDOMWALK_CHANCE))
 			{
 				IPoint3D target = CalcRandomWalkTarget();
 				if (target != null)
@@ -450,10 +449,6 @@ namespace DOL.AI.Brain
 
 			if (living == null) return;
 
-			//Handle trigger to say sentance on first aggro.
-			if (m_aggroTable.Count < 1)
-				Body.FireAmbientSentence(GameNPC.eAmbientTrigger.aggroing, living);
-			
 			// Check LOS (walls, pits, etc...) before  attacking, player + pet
 			// Be sure the aggrocheck is triggered by the brain on Think() method
 			if (DOL.GS.ServerProperties.Properties.ALWAYS_CHECK_LOS && CheckLOS)
@@ -470,7 +465,15 @@ namespace DOL.AI.Brain
 					if (!AggroLOS) return;
 				}
 			}
-			
+
+			BringFriends(living);
+
+			//Handle trigger to say sentance on first aggro.
+			if (m_aggroTable.Count < 1)
+			{
+				Body.FireAmbientSentence(GameNPC.eAmbientTrigger.aggroing, living);
+			}
+
 			// only protect if gameplayer and aggroamout > 0
 			if (living is GamePlayer && aggroamount > 0)
 			{
@@ -555,7 +558,6 @@ namespace DOL.AI.Brain
 					{
 						m_aggroTable[living] = 1L;
 					}
-
 				}
 			}
 		}
@@ -594,6 +596,8 @@ namespace DOL.AI.Brain
 		/// </summary>
 		public virtual void ClearAggroList()
 		{
+			CanBAF = true; // Mobs that drop out of combat can BAF again
+
 			lock ((m_aggroTable as ICollection).SyncRoot)
 			{
 				m_aggroTable.Clear();
@@ -876,175 +880,182 @@ namespace DOL.AI.Brain
 				}
 
 				Body.StartAttack(ad.Attacker);
-				BringFriends(ad);
 			}
 		}
 
 		#endregion
 
 		#region Bring a Friend
-
 		/// <summary>
-		/// Mobs within this range will be called upon to add on a group
-		/// of players inside of a dungeon.
+		/// Initial range to try to get BAFs from.
+		/// May be overloaded for specific brain types, ie. dragons or keep guards
 		/// </summary>
-		protected static ushort m_BAFReinforcementsRange = 1000; //2000
-
-		/// <summary>
-		/// Players within this range around the puller will be subject
-		/// to attacks from adds.
-		/// </summary>
-		protected static ushort m_BAFTargetPlayerRange = 1500; //3000
-
-		/// <summary>
-		/// BAF range for adds close to the pulled mob.
-		/// </summary>
-		public virtual ushort BAFCloseRange
+		protected virtual ushort BAFInitialRange
 		{
-			get { return (ushort)((AggroRange * 2) / 5); }
+			get { return 250; }
 		}
 
 		/// <summary>
-		/// BAF range for group adds in dungeons.
+		/// Max range to try to get BAFs from.
+		/// May be overloaded for specific brain types, ie.dragons or keep guards
 		/// </summary>
-		public virtual ushort BAFReinforcementsRange
+		protected virtual ushort BAFMaxRange
 		{
-			get { return m_BAFReinforcementsRange; }
-			set { m_BAFReinforcementsRange = (value > 0) ? (ushort)value : (ushort)0; }
+			get { return 2000; }
 		}
 
 		/// <summary>
-		/// Range for potential targets around the puller.
+		/// Max range to try to look for nearby players.
+		/// May be overloaded for specific brain types, ie.dragons or keep guards
 		/// </summary>
-		public virtual ushort BAFTargetPlayerRange
+		protected virtual ushort BAFPlayerRange
 		{
-			get { return m_BAFTargetPlayerRange; }
-			set { m_BAFTargetPlayerRange = (value > 0) ? (ushort)value : (ushort)0; }
+			get { return 5000; }
 		}
 
 		/// <summary>
-		/// Bring friends when this living is attacked. There are 2
-		/// different mechanisms for BAF:
-		/// 1) Any mobs of the same faction within a certain (short) range
-		///    around the pulled mob will add on the puller, anywhere.
-		/// 2) In dungeons, group size is taken into account as well, the
-		///    bigger the group, the more adds will come, even if they are
-		///    not close to the pulled mob.
+		/// Can the mob bring a friend?
+		/// Set to false when a mob BAFs or is brought by a friend.
 		/// </summary>
-		/// <param name="attackData">The data associated with the puller's attack.</param>
-		protected virtual void BringFriends(AttackData attackData)
-		{
-			// Only add on players.
+		public virtual bool CanBAF { get; set; } = true;
 
-			GameLiving attacker = attackData.Attacker;
+		/// <summary>
+		/// Bring friends when this mob aggros
+		/// </summary>
+		/// <param name="attacker">Whoever triggered the BAF</param>
+		protected virtual void BringFriends(GameLiving attacker)
+		{
+			if (!CanBAF)
+				return;
+			
+			GamePlayer puller;  // player that triggered the BAF
+
+			// Only BAF on players and pets of players
 			if (attacker is GamePlayer)
+				puller = (GamePlayer)attacker;
+			else if (attacker is GamePet pet && pet.Owner is GamePlayer owner)
+				puller = owner;
+			else if (attacker is BDSubPet bdSubPet && bdSubPet.Owner is GamePet bdPet && bdPet.Owner is GamePlayer bdOwner)
+				puller = bdOwner;
+			else
+				return;
+
+			CanBAF = false; // Mobs only BAF once per fight
+
+			int numAttackers = 0;
+
+			List<GamePlayer> victims = null; // Only instantiated if we're tracking potential victims
+			
+			// These are only used if we have to check for duplicates
+			HashSet<String> countedVictims = null;
+			HashSet<String> countedAttackers = null;
+
+			BattleGroup bg = puller.TempProperties.getProperty<object>(BattleGroup.BATTLEGROUP_PROPERTY, null) as BattleGroup;
+
+			// Check group first to minimize the number of HashSet.Add() calls
+			if (puller.Group is Group group)
 			{
-				BringCloseFriends(attackData);
-				if (attacker.CurrentRegion.IsDungeon)
-					BringReinforcements(attackData);
-			}
-		}
+				if (DOL.GS.ServerProperties.Properties.BAF_MOBS_COUNT_BG_MEMBERS && bg != null)
+					countedAttackers = new HashSet<String>(); // We have to check for duplicates when counting attackers
 
-		/// <summary>
-		/// Get mobs close to the pulled mob to add on the puller and his
-		/// group as well.
-		/// </summary>
-		/// <param name="attackData">The data associated with the puller's attack.</param>
-		protected virtual void BringCloseFriends(AttackData attackData)
-		{
-			// Have every friend within close range add on the attacker's
-			// group.
-
-			GamePlayer attacker = (GamePlayer)attackData.Attacker;
-
-			foreach (GameNPC npc in Body.GetNPCsInRadius(BAFCloseRange))
-			{
-				if (npc.IsFriend(Body) && npc.IsAvailable && npc.IsAggressive)
+				if (!DOL.GS.ServerProperties.Properties.BAF_MOBS_ATTACK_PULLER)
 				{
-					StandardMobBrain brain = (StandardMobBrain)npc.Brain;
-					brain.AddToAggroList(PickTarget(attacker), 1);
-					brain.AttackMostWanted();
+					if (DOL.GS.ServerProperties.Properties.BAF_MOBS_ATTACK_BG_MEMBERS && bg != null)
+					{
+						// We need a large enough victims list for group and BG, and also need to check for duplicate victims
+						victims = new List<GamePlayer>(group.MemberCount + bg.PlayerCount - 1);
+						countedVictims = new HashSet<String>();
+					}
+					else
+						victims = new List<GamePlayer>(group.MemberCount);
 				}
-			}
-		}
 
-		/// <summary>
-		/// Get mobs to add on the puller's group, their numbers depend on the
-		/// group's size.
-		/// </summary>
-		/// <param name="attackData">The data associated with the puller's attack.</param>
-		protected virtual void BringReinforcements(AttackData attackData)
-		{
-			// Determine how many friends to bring, as a rule of thumb, allow for
-			// max 2 players dealing with 1 mob. Only players from the group the
-			// original attacker is in will be taken into consideration.
-			// Example: A group of 3 or 4 players will get 1 add, a group of 7 or 8
-			// players will get 3 adds.
+				foreach (GamePlayer player in group.GetPlayersInTheGroup())
+					if (player != null && (player.InternalID == puller.InternalID || player.IsWithinRadius(puller, BAFPlayerRange, true)))
+					{
+						numAttackers++;
 
-			GamePlayer attacker = (GamePlayer)attackData.Attacker;
-			Group attackerGroup = attacker.Group;
-			int numAttackers = (attackerGroup == null) ? 1 : attackerGroup.MemberCount;
-			int maxAdds = (numAttackers + 1) / 2 - 1;
+						if (countedAttackers != null)
+							countedAttackers.Add(player.InternalID);
+
+						if (victims != null)
+						{
+							victims.Add(player);
+
+							if (countedVictims != null)
+								countedVictims.Add(player.InternalID);
+						}
+					}
+			} // if (puller.Group is Group group)
+
+			// Do we have to count BG members, or add them to victims list?
+			if ((bg != null) && (DOL.GS.ServerProperties.Properties.BAF_MOBS_COUNT_BG_MEMBERS
+				|| (DOL.GS.ServerProperties.Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !DOL.GS.ServerProperties.Properties.BAF_MOBS_ATTACK_PULLER)))
+			{
+				if (victims == null && DOL.GS.ServerProperties.Properties.BAF_MOBS_ATTACK_BG_MEMBERS && !DOL.GS.ServerProperties.Properties.BAF_MOBS_ATTACK_PULLER)
+					// Puller isn't in a group, so we have to create the victims list for the BG
+					victims = new List<GamePlayer>(bg.PlayerCount);
+
+				foreach (GamePlayer player in bg.GetPlayersInTheBattleGroup())
+					if (player != null && (player.InternalID == puller.InternalID || player.IsWithinRadius(puller, BAFPlayerRange, true)))
+					{
+						if (DOL.GS.ServerProperties.Properties.BAF_MOBS_COUNT_BG_MEMBERS
+							&& (countedAttackers == null || !countedAttackers.Contains(player.InternalID)))
+								numAttackers++;
+
+						if (victims != null && (countedVictims == null || !countedVictims.Contains(player.InternalID)))
+							victims.Add(player);
+					}
+			} // if ((bg != null) ...
+
+			if (numAttackers == 0)
+				// Player is alone
+				numAttackers = 1;
+
+			int percentBAF = DOL.GS.ServerProperties.Properties.BAF_INITIAL_CHANCE
+				+ ((numAttackers - 1) * DOL.GS.ServerProperties.Properties.BAF_ADDITIONAL_CHANCE);
+
+			int maxAdds = percentBAF / 100; // Multiple of 100 are guaranteed BAFs
+
+			// Calculate chance of an addition add based on the remainder
+			if (Util.Chance(percentBAF % 100))
+				maxAdds++;
+
 			if (maxAdds > 0)
 			{
-				// Bring friends, try mobs in the neighbourhood first. If there
-				// aren't any, try getting some from farther away.
+				int numAdds = 0; // Number of mobs currently BAFed
+				ushort range = BAFInitialRange; // How far away to look for friends
 
-				int numAdds = 0;
-				ushort range = 250;
-
-				while (numAdds < maxAdds && range <= BAFReinforcementsRange)
+				// Try to bring closer friends before distant ones.
+				while (numAdds < maxAdds && range <= BAFMaxRange)
 				{
 					foreach (GameNPC npc in Body.GetNPCsInRadius(range))
 					{
-						if (numAdds >= maxAdds) break;
+						if (numAdds >= maxAdds)
+							break;
 
-						// If it's a friend, have it attack a random target in the
-						// attacker's group.
-
-						if (npc.IsFriend(Body) && npc.IsAggressive && npc.IsAvailable)
+						// If it's a friend, have it attack
+						if (npc.IsFriend(Body) && npc.IsAggressive && npc.IsAvailable && npc.Brain is StandardMobBrain brain)
 						{
-							StandardMobBrain brain = (StandardMobBrain)npc.Brain;
-							brain.AddToAggroList(PickTarget(attacker), 1);
+							brain.CanBAF = false; // Mobs brought cannot bring friends of their own
+
+							GamePlayer target;
+							if (victims != null && victims.Count > 0)
+								target = victims[Util.Random(0, victims.Count - 1)];
+							else
+								target = puller;
+
+							brain.AddToAggroList(target, 1);
 							brain.AttackMostWanted();
-							++numAdds;
+							numAdds++;
 						}
-					}
+					}// foreach
 
 					// Increase the range for finding friends to join the fight.
-
 					range *= 2;
-				}
-			}
-		}
-
-		/// <summary>
-		/// Pick a random target from the attacker's group that is within a certain
-		/// range of the original puller.
-		/// </summary>
-		/// <param name="attacker">The original attacker.</param>
-		/// <returns></returns>
-		protected virtual GamePlayer PickTarget(GamePlayer attacker)
-		{
-			Group attackerGroup = attacker.Group;
-
-			// If no group, pick the attacker himself.
-
-			if (attackerGroup == null) return attacker;
-
-			// Make a list of all players in the attacker's group within
-			// a certain range around the puller.
-
-			ArrayList attackersInRange = new ArrayList();
-
-			foreach (GamePlayer player in attackerGroup.GetPlayersInTheGroup())
-				if (attacker.IsWithinRadius(player, BAFTargetPlayerRange))
-					attackersInRange.Add(player);
-
-			// Pick a random player from the list.
-
-			return (GamePlayer)(attackersInRange[Util.Random(1, attackersInRange.Count) - 1]);
-		}
+				} // while
+			} // if (maxAdds > 0)
+		} // BringFriends()
 
 		#endregion
 
@@ -1158,9 +1169,11 @@ namespace DOL.AI.Brain
 		{
 			if (spell == null) return false;
 			if (Body.GetSkillDisabledDuration(spell) > 0) return false;
-			GameObject lastTarget = Body.TargetObject;
+
+			bool casted = false;
 
 			// clear current target, set target based on spell type, cast spell, return target to original target
+			GameObject lastTarget = Body.TargetObject;
 
 			Body.TargetObject = null;
 			switch (spell.SpellType.ToUpper())
@@ -1338,25 +1351,29 @@ namespace DOL.AI.Brain
 						break;
 					Body.TargetObject = Body;
 					break;
+
+				default:
+					//log.Warn($"CheckDefensiveSpells() encountered an unknown spell type [{spell.SpellType}]");
+					break;
 			}
 
 			if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && LivingHasEffect(living, spell) == false)))
             {
-				if (Body.IsMoving && spell.CastTime > 0)
-					Body.StopFollowing();
+				casted = Body.CastSpell(spell, m_mobSpellLine);
 
-				if (Body.TargetObject != Body && spell.CastTime > 0)
-					Body.TurnTo(Body.TargetObject);
+				if (casted && spell.CastTime > 0)
+				{
+					if (Body.IsMoving)
+						Body.StopFollowing();
 
-				Body.CastSpell(spell, m_mobSpellLine);
-
-				Body.TargetObject = lastTarget;
-				return true;
+					if (Body.TargetObject != Body)
+						Body.TurnTo(Body.TargetObject);
+				}
 			}
 
 			Body.TargetObject = lastTarget;
 
-			return false;
+			return casted;
 		}
 
 		/// <summary>
@@ -1367,18 +1384,20 @@ namespace DOL.AI.Brain
 			if (spell.Target.ToLower() != "enemy" && spell.Target.ToLower() != "area" && spell.Target.ToLower() != "cone")
 				return false;
 
-			if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && LivingHasEffect(living, spell) == false)))
-            {
-				if (Body.IsMoving && spell.CastTime > 0)
-					Body.StopFollowing();
+			bool casted = false;
 
-				if (Body.TargetObject != Body && spell.CastTime > 0)
+			if (Body.TargetObject is GameLiving living && (spell.Duration == 0 || (!living.HasEffect(spell) || spell.SpellType.ToUpper() == "DIRECTDAMAGEWITHDEBUFF")))
+            {
+				// Offensive spells require the caster to be facing the target
+				if (Body.TargetObject != Body)
 					Body.TurnTo(Body.TargetObject);
 
-				Body.CastSpell(spell, m_mobSpellLine);
-				return true;
+				casted = Body.CastSpell(spell, m_mobSpellLine);
+
+				if (casted && spell.CastTime > 0 && Body.IsMoving)
+					Body.StopFollowing();
 			}
-			return false;
+			return casted;
 		}
 
 		/// <summary>
@@ -1450,7 +1469,7 @@ namespace DOL.AI.Brain
 		/// <param name="target">The target living object</param>
 		/// <param name="spell">The spell to check</param>
 		/// <returns>True if the living has the effect</returns>
-		protected bool LivingHasEffect(GameLiving target, Spell spell)
+		public static bool LivingHasEffect(GameLiving target, Spell spell)
 		{
 			if (target == null)
 				return true;
@@ -1536,21 +1555,12 @@ namespace DOL.AI.Brain
 		public virtual IPoint3D CalcRandomWalkTarget()
 		{
 			int maxRoamingRadius = Body.CurrentRegion.IsDungeon ? 5 : 500;
-			int minRoamingRadius = Body.CurrentRegion.IsDungeon ? 1 : 100;
 
 			if (Body.RoamingRange > 0)
-			{
 				maxRoamingRadius = Body.RoamingRange;
 
-				if (minRoamingRadius >= maxRoamingRadius)
-					minRoamingRadius = maxRoamingRadius / 3;
-			}
-
-			int roamingRadius = Util.Random(minRoamingRadius, maxRoamingRadius);
-
-			double angle = Util.Random(0, 360) / (2 * Math.PI);
-			double targetX = Body.SpawnPoint.X + Util.Random( -roamingRadius, roamingRadius );
-			double targetY = Body.SpawnPoint.Y + Util.Random( -roamingRadius, roamingRadius );
+			double targetX = Body.SpawnPoint.X + Util.Random( -maxRoamingRadius, maxRoamingRadius);
+			double targetY = Body.SpawnPoint.Y + Util.Random( -maxRoamingRadius, maxRoamingRadius);
 
 			return new Point3D( (int)targetX, (int)targetY, Body.SpawnPoint.Z );
 		}

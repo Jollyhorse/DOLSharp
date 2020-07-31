@@ -140,8 +140,8 @@ namespace DOL.Tests
 		{
 			if (SendCharacterOverviewMethod != null) SendCharacterOverviewMethod(this, realm);
 		}
-		public Action<TestPacketLib, string, bool> SendDupNameCheckReplyMethod { get; set; }
-		public void SendDupNameCheckReply(string name, bool nameExists)
+		public Action<TestPacketLib, string, byte> SendDupNameCheckReplyMethod { get; set; }
+		public void SendDupNameCheckReply(string name, byte nameExists)
 		{
 			if (SendDupNameCheckReplyMethod != null) SendDupNameCheckReplyMethod(this, name, nameExists);
 		}
@@ -403,15 +403,15 @@ namespace DOL.Tests
 		{
 			if (SendGroupWindowUpdateMethod != null) SendGroupWindowUpdateMethod(this);
 		}
-		public Action<TestPacketLib, bool, GameLiving> SendGroupMemberUpdateMethod { get; set; }
-		public void SendGroupMemberUpdate(bool updateIcons, GameLiving living)
+		public Action<TestPacketLib, bool, bool, GameLiving> SendGroupMemberUpdateMethod { get; set; }
+		public void SendGroupMemberUpdate(bool updateIcons, bool updateMap, GameLiving living)
 		{
-			if (SendGroupMemberUpdateMethod != null) SendGroupMemberUpdateMethod(this, updateIcons, living);
+			if (SendGroupMemberUpdateMethod != null) SendGroupMemberUpdateMethod(this, updateIcons, true, living);
 		}
-		public Action<TestPacketLib, bool> SendGroupMembersUpdateMethod { get; set; }
-		public void SendGroupMembersUpdate(bool updateIcons)
+		public Action<TestPacketLib, bool, bool> SendGroupMembersUpdateMethod { get; set; }
+		public void SendGroupMembersUpdate(bool updateIcons, bool updateMap)
 		{
-			if (SendGroupMembersUpdateMethod != null) SendGroupMembersUpdateMethod(this, updateIcons);
+			if (SendGroupMembersUpdateMethod != null) SendGroupMembersUpdateMethod(this, updateIcons, true);
 		}
 		public Action<TestPacketLib, ICollection<InventoryItem>> SendInventoryItemsUpdateMethod { get; set; }
 		public void SendInventoryItemsUpdate(ICollection<InventoryItem> itemsToUpdate)
@@ -592,6 +592,11 @@ namespace DOL.Tests
 		public void SendObjectDelete(GameObject obj)
 		{
 			if (SendObjectDeleteMethod != null) SendObjectDeleteMethod(this, obj);
+		}
+		public Action<TestPacketLib, ushort> SendObjectIdDeleteMethod { get; set; }
+		public void SendObjectDelete(ushort objId)
+		{
+			if (SendObjectIdDeleteMethod != null) SendObjectIdDeleteMethod(this, objId);
 		}
 		public Action<TestPacketLib, GameObject> SendObjectUpdateMethod { get; set; }
 		public void SendObjectUpdate(GameObject obj)

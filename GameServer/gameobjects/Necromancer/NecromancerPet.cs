@@ -24,6 +24,7 @@ using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.Spells;
+using DOL.GS.Styles;
 
 namespace DOL.GS
 {
@@ -112,9 +113,7 @@ namespace DOL.GS
 					break;
 			}
 		}
-
 		#region Stats
-
 		/// <summary>
 		/// Get modified bonuses for the pet; some bonuses come from the shade,
 		/// some come from the pet.
@@ -207,7 +206,7 @@ namespace DOL.GS
 					}
 				case eProperty.MaxHealth:
 					{
-						int conBonus = (int)(3.1 * Constitution);
+						int conBonus = (int)(3.1 * GetModified(eProperty.Constitution));
 						int hitsBonus = (int)(32.5 * Level + m_summonHitsBonus);
 						int debuff = DebuffCategory[(int)property];
 
@@ -263,71 +262,78 @@ namespace DOL.GS
 		}
 
 		/// <summary>
-		/// Base strength.
+		/// Set stats according to necro pet server properties
 		/// </summary>
-		public override short Strength
+		public override void AutoSetStats()
 		{
-			get
+			if (Name.ToUpper() == "GREATER NECROSERVANT")
 			{
-				switch (Name.ToLower())
+				Strength = ServerProperties.Properties.NECRO_GREATER_PET_STR_BASE;
+				Constitution = (short)(ServerProperties.Properties.NECRO_GREATER_PET_CON_BASE + m_summonConBonus);
+				Dexterity = ServerProperties.Properties.NECRO_GREATER_PET_DEX_BASE;
+				Quickness = ServerProperties.Properties.NECRO_GREATER_PET_QUI_BASE;
+
+				if (Level > 1)
 				{
-					case "greater necroservant":
-						return 60;
-					default:
-						return (short)(60 + Level);
+					Strength += (short)(Math.Round(ServerProperties.Properties.NECRO_GREATER_PET_STR_MULTIPLIER * Level));
+					Constitution += (short)(Math.Round(ServerProperties.Properties.NECRO_GREATER_PET_CON_MULTIPLIER * Level));
+					Dexterity += (short)(Math.Round(ServerProperties.Properties.NECRO_GREATER_PET_DEX_MULTIPLIER * Level));
+					Quickness += (short)(Math.Round(ServerProperties.Properties.NECRO_GREATER_PET_QUI_MULTIPLIER * Level));
 				}
 			}
-		}
-
-		/// <summary>
-		/// Base constitution.
-		/// </summary>
-		public override short Constitution
-		{
-			get
+			else
 			{
-				switch (Name.ToLower())
+				Strength = ServerProperties.Properties.NECRO_PET_STR_BASE;
+				Constitution = (short)(ServerProperties.Properties.NECRO_PET_CON_BASE + m_summonConBonus);
+				Dexterity = ServerProperties.Properties.NECRO_PET_DEX_BASE;
+				Quickness = ServerProperties.Properties.NECRO_PET_QUI_BASE;
+
+				if (Level > 1)
 				{
-					case "greater necroservant":
-						return (short)(60 + Level / 3 + m_summonConBonus);
-					default:
-						return (short)(60 + Level / 2 + m_summonConBonus);
+					Strength += (short)(Math.Round(ServerProperties.Properties.NECRO_PET_STR_MULTIPLIER * Level));
+					Constitution += (short)(Math.Round(ServerProperties.Properties.NECRO_PET_CON_MULTIPLIER * Level));
+					Dexterity += (short)(Math.Round(ServerProperties.Properties.NECRO_PET_DEX_MULTIPLIER * Level));
+					Quickness += (short)(Math.Round(ServerProperties.Properties.NECRO_PET_QUI_MULTIPLIER * Level));
 				}
 			}
-		}
 
-		/// <summary>
-		/// Base dexterity. Make greater necroservant slightly more dextrous than
-		/// all the other pets.
-		/// </summary>
-		public override short Dexterity
-		{
-			get
-			{
-				switch (Name.ToLower())
-				{
-					case "greater necroservant":
-						return (short)(60 + Level / 2);
-					default:
-						return 60;
-				}
-			}
-		}
+			Empathy = (byte)(29 + Level);
+			Piety = (byte)(29 + Level);
+			Charisma = (byte)(29 + Level);
 
-		/// <summary>
-		/// Base quickness.
-		/// </summary>
-		public override short Quickness
-		{
-			get
+			// Now scale them according to NPCTemplate values
+			if (NPCTemplate != null)
 			{
-				switch (Name.ToLower())
-				{
-					case "greater necroservant":
-						return (short)(60 + Level);
-					default:
-						return (short)(60 + Level / 3);
-				}
+				if (NPCTemplate.Strength > 0)
+					Strength = (short)Math.Round(Strength * NPCTemplate.Strength / 100.0);
+
+				if (NPCTemplate.Constitution > 0)
+					Constitution = (short)Math.Round(Constitution * NPCTemplate.Constitution / 100.0);
+				
+				if (NPCTemplate.Quickness > 0)
+					Quickness = (short)Math.Round(Quickness * NPCTemplate.Quickness / 100.0);
+				
+				if (NPCTemplate.Dexterity > 0)
+					Dexterity = (short)Math.Round(Dexterity * NPCTemplate.Dexterity / 100.0);
+				
+				if (NPCTemplate.Intelligence > 0)
+					Intelligence = (short)Math.Round(Intelligence * NPCTemplate.Intelligence / 100.0);
+				
+				// Except for CHA, EMP, AND PIE as those don't have autoset values.
+				if (NPCTemplate.Empathy > 0)
+					Empathy = (short)(NPCTemplate.Empathy + Level);
+				
+				if (NPCTemplate.Piety > 0)
+					Piety = (short)(NPCTemplate.Piety + Level);
+
+				if (NPCTemplate.Charisma > 0)
+					Charisma = (short)(NPCTemplate.Charisma + Level);
+
+				// Older DBs have necro pet templates with stats at 30, so warn servers that they need to update their templates
+				if (NPCTemplate.Strength == 30 || NPCTemplate.Constitution == 30 || NPCTemplate.Quickness == 30 
+					|| NPCTemplate.Dexterity == 30 || NPCTemplate.Intelligence == 30)
+					log.Warn($"AutoSetStats(): NpcTemplate with TemplateId=[{NPCTemplate.TemplateId}] scales necro pet Str/Con/Qui/Dex/Int to 30%.  "
+						+ "If this is not intended, change stat values in template to desired percentage or set to 0 to use default.");
 			}
 		}
 
@@ -366,6 +372,48 @@ namespace DOL.GS
 		#endregion
 
 		#region Spells
+		/// <summary>
+		/// Called when necro pet is hit to see if spellcasting is interrupted
+		/// </summary>
+		/// <param name="ad">information about the attack</param>
+		public override void OnAttackedByEnemy(AttackData ad)
+		{
+			if (!HasEffect(typeof(FacilitatePainworkingEffect)) &&
+				ad != null && ad.Attacker != null && ChanceSpellInterrupt(ad.Attacker))
+			{
+				if (Brain is NecromancerPetBrain necroBrain)
+				{
+					StopCurrentSpellcast();
+					necroBrain.MessageToOwner("Your pet was attacked by " + ad.Attacker.Name + " and their spell was interrupted!", eChatType.CT_SpellResisted);
+
+					if(necroBrain.SpellsQueued)
+						necroBrain.ClearSpellQueue();
+				}
+			}
+
+			base.OnAttackedByEnemy(ad);
+		}
+
+		/// <summary>
+		/// Called when the necro pet attacks, which interrupts current spells being cast
+		/// </summary>
+		protected override AttackData MakeAttack(GameObject target, InventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS)
+		{
+			if (!HasEffect(typeof(FacilitatePainworkingEffect)))
+			{
+				StopCurrentSpellcast();
+
+				if (Brain is NecromancerPetBrain necroBrain)
+				{
+					necroBrain.MessageToOwner("Your pet attacked and interrupted their spell!", eChatType.CT_SpellResisted);
+
+					if (necroBrain.SpellsQueued)
+						necroBrain.ClearSpellQueue();
+				}
+			}
+
+			return base.MakeAttack(target, weapon, style, effectiveness, interruptDuration, dualWield, ignoreLOS);
+		}
 
 		/// <summary>
 		/// Pet-only insta spells.
@@ -375,19 +423,24 @@ namespace DOL.GS
 			get { return "Necro Pet Insta Spells"; }
 		}
 
-
-		public override void CastSpell(Spell spell, SpellLine line)
+		/// <summary>
+		/// Cast a specific spell from given spell line
+		/// </summary>
+		/// <param name="spell">spell to cast</param>
+		/// <param name="line">Spell line of the spell (for bonus calculations)</param>
+		/// <returns>Whether the spellcast started successfully</returns>
+		public override bool CastSpell(Spell spell, SpellLine line)
 		{
 			if (IsStunned || IsMezzed)
 			{
 				Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.CrowdControlled));
-				return;
+				return false;
 			}
 
 			if ((m_runningSpellHandler != null && spell.CastTime > 0))
 			{
 				Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.AlreadyCasting));
-				return;
+				return false;
 			}
 
 			ISpellHandler spellhandler = ScriptMgr.CreateSpellHandler(this, spell, line);
@@ -398,18 +451,18 @@ namespace DOL.GS
 				if (Owner.Mana < power)
 				{
 					Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.NotEnoughPower));
-					return;
+					return false;
 				}
 
 				m_runningSpellHandler = spellhandler;
 				spellhandler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
-				spellhandler.CastSpell();
+				return spellhandler.CastSpell();
 			}
 			else
 			{
 				if (log.IsWarnEnabled)
 					log.Warn(Name + " wants to cast but spell " + spell.Name + " not implemented yet");
-				return;
+				return false;
 			}
 		}
 

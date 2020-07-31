@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using DOL.Database;
+using DOL.AI.Brain;
 
 namespace DOL.GS
 {
@@ -305,27 +306,67 @@ namespace DOL.GS
 		}
 
         /// <summary>
-        /// Whether or not this spell is harmful.
+        /// Is this spell harmful?
         /// </summary>
         public bool IsHarmful
         {
             get
             {
-                return (Target.ToLower() == "enemy" || Target.ToLower() == "area" ||
-                    Target.ToLower() == "cone");
+				switch (Target.ToUpper())
+				{
+					case "ENEMY":
+					case "AREA":
+					case "CONE":
+						return true;
+					default:
+						return false;
+				}
             }
         }
-        
+
 		/// <summary>
-		/// Whether or not this is a healing spell
+		/// Is this spell Helpful?
+		/// </summary>
+		public bool IsHelpful
+		{
+			get { return !IsHarmful; }
+		}
+
+		/// <summary>
+		/// Is this a buff spell?
+		/// </summary>
+		public bool IsBuff
+		{
+			get
+			{
+				return (IsHelpful && (Duration > 0 || Concentration > 0));
+			}
+		}
+
+		/// <summary>
+		/// Is this a healing spell?
 		/// </summary>
 		public bool IsHealing
 		{
 			get
 			{
-				return (Target.ToUpper() == "COMBATHEAL" || Target.ToUpper() == "HEAL" || Target.ToUpper() == "HEALOVERTIME" || Target.ToUpper() == "HEALTHREGENBUFF" 
-					|| Target.ToUpper() == "MERCHEAL" || Target.ToUpper() == "OMNIHEAL" || Target.ToUpper() == "PBAEHEAL" || Target.ToUpper() == "SPREADHEAL" 
-					|| Target.ToUpper() == "SUMMONHEALINGELEMENTAL");
+				switch (SpellType.ToUpper())
+				{
+					case "CUREPOISON":
+					case "CUREDISEASE":
+					case "COMBATHEAL":
+					case "HEAL":
+					case "HEALOVERTIME":
+					case "HEALTHREGENBUFF":
+					case "MERCHEAL":
+					case "OMNIHEAL":
+					case "PBAEHEAL":
+					case "SPREADHEAL":
+					case "SUMMONHEALINGELEMENTAL":
+						return true;
+					default:
+						return false;
+				}
 			}
 		}
 
@@ -514,6 +555,16 @@ namespace DOL.GS
 
 		#region Spell Helpers
 		
+		/// <summary>
+		/// Check if a target has this spell's effect already
+		/// </summary>
+		/// <param name="target"></param>
+		/// <returns></returns>
+		public bool TargetHasEffect(GameObject target)
+		{
+			return Duration > 0 && StandardMobBrain.LivingHasEffect(target as GameLiving, this);
+		}
+
         /// <summary>
         /// Whether or not the spell is instant cast.
         /// </summary>
@@ -526,7 +577,7 @@ namespace DOL.GS
         }
         
         /// <summary>
-        /// Wether or not the spell is Point Blank Area of Effect
+        /// Whether or not the spell is Point Blank Area of Effect
         /// </summary>
         public bool IsPBAoE
         {
@@ -535,66 +586,66 @@ namespace DOL.GS
         		return (Range == 0 && IsAoE);
         	}
         }
-        
-        /// <summary>
-        /// Wether or not this spell need Instrument (and is a Song)
-        /// </summary>
-        public bool NeedInstrument
+
+		/// <summary>
+		/// Whether or not this spell need Instrument (and is a Song)
+		/// </summary>
+		public bool NeedInstrument
         {
         	get
         	{
         		return InstrumentRequirement != 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether or not this spell is an Area of Effect Spell
-        /// </summary>
-        public bool IsAoE
+
+		/// <summary>
+		/// Whether or not this spell is an Area of Effect Spell
+		/// </summary>
+		public bool IsAoE
         {
         	get
         	{
         		return Radius > 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether this spell Has valid SubSpell 
-        /// </summary>
-        public bool HasSubSpell
+
+		/// <summary>
+		/// Whether this spell Has valid SubSpell 
+		/// </summary>
+		public bool HasSubSpell
         {
         	get
         	{
         		return SubSpellID > 0 || MultipleSubSpells.Count > 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether this spell has a recast delay (cooldown)
-        /// </summary>
-        public bool HasRecastDelay
+
+		/// <summary>
+		/// Whether this spell has a recast delay (cooldown)
+		/// </summary>
+		public bool HasRecastDelay
         {
         	get
         	{
         		return RecastDelay > 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether this spell is concentration based
-        /// </summary>
-        public bool IsConcentration
+
+		/// <summary>
+		/// Whether this spell is concentration based
+		/// </summary>
+		public bool IsConcentration
         {
         	get
         	{
         		return Concentration > 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether this spell has power usage.
-        /// </summary>
-        public bool UsePower
+
+		/// <summary>
+		/// Whether this spell has power usage.
+		/// </summary>
+		public bool UsePower
         {
         	get
         	{
@@ -602,43 +653,43 @@ namespace DOL.GS
         	}
         }
 
-        /// <summary>
-        /// Wether this spell has pulse power usage.
-        /// </summary>
-        public bool UsePulsePower
+		/// <summary>
+		/// Whether this spell has pulse power usage.
+		/// </summary>
+		public bool UsePulsePower
         {
         	get
         	{
         		return PulsePower != 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether this Spell is a pulsing spell (Song/Chant)
-        /// </summary>
-        public bool IsPulsing
+
+		/// <summary>
+		/// Whether this Spell is a pulsing spell (Song/Chant)
+		/// </summary>
+		public bool IsPulsing
         {
         	get
         	{
         		return Pulse != 0;
         	}
         }
-        
-        /// <summary>
-        /// Wether this Spell is a Song/Chant
-        /// </summary>
-        public bool IsChant
+
+		/// <summary>
+		/// Whether this Spell is a Song/Chant
+		/// </summary>
+		public bool IsChant
         {
         	get
         	{
         		return Pulse != 0 && !IsFocus;
         	}
         }
-        
-        /// <summary>
-        /// Wether this Spell is a Pulsing Effect (Dot/Hot...)
-        /// </summary>
-        public bool IsPulsingEffect
+
+		/// <summary>
+		/// Whether this Spell is a Pulsing Effect (Dot/Hot...)
+		/// </summary>
+		public bool IsPulsingEffect
         {
         	get
         	{
